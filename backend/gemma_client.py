@@ -14,10 +14,47 @@ SYSTEM_PROMPTS = {
     "Marathi": "तुम्ही वाणीडॉक आहात, ग्रामीण भारतासाठी एक प्रेमळ आणि उपयुक्त एआय आरोग्य सहाय्यक. सोप्या आणि संक्षिप्त शब्दात उत्तरे द्या. कधीही निश्चित निदान करू नका. गंभीर लक्षणांसाठी डॉक्टरांचा सल्ला घेण्याची शिफारस करा.",
 }
 
-
 def get_system_prompt(language: str) -> str:
     return SYSTEM_PROMPTS.get(language, SYSTEM_PROMPTS["English"])
 
+def call_gemini_api(message: str, language: str, image_base64: str = None) -> str:
+    system_prompt = get_system_prompt(language)
+    api_key = os.environ.get("GEMINI_API_KEY")
+    
+    if not api_key:
+        print("Error: GEMINI_API_KEY is not set.")
+        return "I'm sorry, I am currently unable to process your request. AI service is unavailable."
+        
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+    
+    parts = [
+        {"text": system_prompt},
+        {"text": message if message else "What do you see in this image?"}
+    ]
+    
+    if image_base64:
+        clean_image = image_base64.split(",")[1] if "," in image_base64 else image_base64
+        parts.append({
+            "inline_data": {
+                "mime_type": "image/jpeg",
+                "data": clean_image
+            }
+        })
+        
+    payload = {
+        "contents": [{
+            "parts": parts
+        }]
+    }
+    
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except Exception as e:
+        print(f"Error communicating with Gemini: {e}")
+        return "I'm sorry, I am currently unable to process your request. Both AI services failed."
 
 def ask_text(message: str, language: str) -> str:
     system_prompt = get_system_prompt(language)
@@ -38,18 +75,18 @@ def ask_text(message: str, language: str) -> str:
         data = response.json()
         return data.get("message", {}).get("content", "")
     except requests.exceptions.RequestException as e:
-        print(f"Error communicating with Ollama: {e}")
-        return "I'm sorry, I am currently unable to process your request."
-
+        print(f"Ollama failed ({e}), falling back to Gemini API.")
+        return call_gemini_api(message, language)
 
 def ask_vision(message: str, image_base64: str, language: str) -> str:
     system_prompt = get_system_prompt(language)
 
     url = f"{OLLAMA_BASE_URL}/api/chat"
 
-    # Strip data URL prefix if present (e.g., data:image/jpeg;base64,...)
-    if "," in image_base64:
-        image_base64 = image_base64.split(",")[1]
+    # Strip data URL prefix if present
+    clean_image_base64 = image_base64
+    if "," in clean_image_base64:
+        clean_image_base64 = clean_image_base64.split(",")[1]
 
     payload = {
         "model": OLLAMA_MODEL,
@@ -58,7 +95,7 @@ def ask_vision(message: str, image_base64: str, language: str) -> str:
             {
                 "role": "user",
                 "content": message if message else "What do you see in this image?",
-                "images": [image_base64],
+                "images": [clean_image_base64],
             },
         ],
         "stream": False,
@@ -70,5 +107,5 @@ def ask_vision(message: str, image_base64: str, language: str) -> str:
         data = response.json()
         return data.get("message", {}).get("content", "")
     except requests.exceptions.RequestException as e:
-        print(f"Error communicating with Ollama Vision: {e}")
-        return "I'm sorry, I am currently unable to process this image."
+        print(f"Ollama Vision failed ({e}), falling back to Gemini API.")
+        return call_gemini_api(message, language, image_base64)

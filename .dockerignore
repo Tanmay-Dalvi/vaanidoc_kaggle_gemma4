@@ -3,3 +3,6 @@ frontend/node_modules
 __pycache__
 .env
 .git
+backend/.env
+frontend/.env
+*.env

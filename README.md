@@ -77,3 +77,8 @@ To enable cloud syncing of offline messages:
    VITE_FIREBASE_APP_ID=your_app_id
    ```
 4. Uncomment the Firebase initialization code in `frontend/src/services/firebaseService.js`.
+
+## Environment Variables 🔑
+For the Gemini API fallback (used when Ollama is unavailable or when deployed to Hugging Face):
+- **For local:** add `GEMINI_API_KEY` to `backend/.env`
+- **For Hugging Face:** add `GEMINI_API_KEY` in Space Settings → Variables and Secrets
