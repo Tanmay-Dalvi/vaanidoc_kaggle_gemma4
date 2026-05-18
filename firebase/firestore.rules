@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /health_queries/{document} {
+      // For a hackathon/offline-first app, we'll allow anyone to write,
+      // but in production, you'd want proper auth and validation.
+      allow read, write: if true;
+    }
+  }
+}
