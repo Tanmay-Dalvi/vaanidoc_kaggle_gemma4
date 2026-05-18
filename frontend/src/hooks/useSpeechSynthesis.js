@@ -17,7 +17,10 @@ const useSpeechSynthesis = () => {
 
     window.speechSynthesis.cancel(); // Stop any current speech
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Strip markdown formatting (*, _, #, `, ~) so it reads cleaner
+    const cleanText = text.replace(/[*_#`~>]/g, '').trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = langMap[language] || 'en-IN';
     utterance.rate = 0.85;
     utterance.pitch = 1.0;

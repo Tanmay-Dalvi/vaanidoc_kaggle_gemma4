@@ -1,7 +1,7 @@
 import { saveMessage, getAllMessages } from './indexedDBService';
 import { syncOfflineMessages } from './firebaseService';
 
-const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:7860/api/chat' : '/api/chat';
+const BACKEND_URL = import.meta.env.DEV ? 'http://localhost:8000/api/chat' : '/api/chat';
 
 export const sendMessage = async ({ message, language, imageBase64 }) => {
   const timestamp = new Date().toISOString();

@@ -185,6 +185,7 @@ const ChatInterface = () => {
               message={msg} 
               isAI={!msg.isUser} 
               onReplay={handleReplay}
+              onStopReplay={stopSpeaking}
               isSpeaking={isSpeaking}
             />
             {!msg.isUser && msg.triage && (
