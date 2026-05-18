@@ -17,13 +17,12 @@ SYSTEM_PROMPTS = {
 def get_system_prompt(language: str) -> str:
     return SYSTEM_PROMPTS.get(language, SYSTEM_PROMPTS["English"])
 
-def call_gemini_api(message: str, language: str, image_base64: str = None) -> str:
+def call_gemini_api(message: str, language: str, image_base64: str = None, ollama_error: str = "") -> str:
     system_prompt = get_system_prompt(language)
     api_key = os.environ.get("GEMINI_API_KEY")
     
     if not api_key:
-        env_keys = ", ".join(list(os.environ.keys())[:15]) # Just show first 15 keys to prove it's reading env
-        return f"Error: GEMINI_API_KEY is completely missing from the environment. Hugging Face did not inject the secret. Available env keys start with: {env_keys}..."
+        return f"Ollama failed locally ({ollama_error}). Then Gemini fallback also failed because GEMINI_API_KEY is not set in your .env file or Space secrets."
         
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
     
@@ -54,7 +53,7 @@ def call_gemini_api(message: str, language: str, image_base64: str = None) -> st
         return data["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
         print(f"Error communicating with Gemini: {e}")
-        return "I'm sorry, I am currently unable to process your request. Both AI services failed."
+        return f"Ollama failed ({ollama_error}), and then Gemini API also failed ({e})."
 
 def ask_text(message: str, language: str) -> str:
     system_prompt = get_system_prompt(language)
@@ -75,8 +74,9 @@ def ask_text(message: str, language: str) -> str:
         data = response.json()
         return data.get("message", {}).get("content", "")
     except requests.exceptions.RequestException as e:
-        print(f"Ollama failed ({e}), falling back to Gemini API.")
-        return call_gemini_api(message, language)
+        error_msg = str(e)
+        print(f"Ollama failed ({error_msg}), falling back to Gemini API.")
+        return call_gemini_api(message, language, None, error_msg)
 
 def ask_vision(message: str, image_base64: str, language: str) -> str:
     system_prompt = get_system_prompt(language)
@@ -107,5 +107,6 @@ def ask_vision(message: str, image_base64: str, language: str) -> str:
         data = response.json()
         return data.get("message", {}).get("content", "")
     except requests.exceptions.RequestException as e:
-        print(f"Ollama Vision failed ({e}), falling back to Gemini API.")
-        return call_gemini_api(message, language, image_base64)
+        error_msg = str(e)
+        print(f"Ollama Vision failed ({error_msg}), falling back to Gemini API.")
+        return call_gemini_api(message, language, image_base64, error_msg)
