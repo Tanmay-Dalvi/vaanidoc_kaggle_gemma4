@@ -1,3 +1,14 @@
+---
+title: Vaanidoc
+emoji: ⚡
+colorFrom: pink
+colorTo: indigo
+sdk: docker
+pinned: false
+license: apache-2.0
+short_description: Offline-first, voice-driven multimodal health assistant
+---
+
 # VaaniDoc 🩺
 
 An offline-first, multimodal AI health assistant for rural India, powered by Gemma 4 (via Ollama).
