@@ -22,8 +22,8 @@ def call_gemini_api(message: str, language: str, image_base64: str = None) -> st
     api_key = os.environ.get("GEMINI_API_KEY")
     
     if not api_key:
-        print("Error: GEMINI_API_KEY is not set.")
-        return "I'm sorry, I am currently unable to process your request. AI service is unavailable."
+        env_keys = ", ".join(list(os.environ.keys())[:15]) # Just show first 15 keys to prove it's reading env
+        return f"Error: GEMINI_API_KEY is completely missing from the environment. Hugging Face did not inject the secret. Available env keys start with: {env_keys}..."
         
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
     
