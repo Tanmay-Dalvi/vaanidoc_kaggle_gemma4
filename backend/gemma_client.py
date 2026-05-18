@@ -52,8 +52,11 @@ def call_gemini_api(message: str, language: str, image_base64: str = None, ollam
         data = response.json()
         return data["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
-        print(f"Error communicating with Gemini: {e}")
-        return f"Ollama failed ({ollama_error}), and then Gemini API also failed ({e})."
+        error_str = str(e)
+        if api_key in error_str:
+            error_str = error_str.replace(api_key, "HIDDEN_API_KEY")
+        print(f"Error communicating with Gemini: {error_str}")
+        return f"Ollama failed ({ollama_error}), and then Gemini API also failed ({error_str})."
 
 def ask_text(message: str, language: str) -> str:
     system_prompt = get_system_prompt(language)
