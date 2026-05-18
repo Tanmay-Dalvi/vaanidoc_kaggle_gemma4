@@ -6,17 +6,26 @@ import { getFirestore, collection, addDoc } from 'firebase/firestore';
 
 // Replace with your Firebase config
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "placeholder",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "placeholder",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "placeholder",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "placeholder",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "placeholder",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "placeholder"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Mock initialization for now since firebase isn't installed
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Only initialize if we have an API key, otherwise it crashes the entire app
+let app = null;
+let db = null;
+
+try {
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "placeholder") {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+  }
+} catch (e) {
+  console.warn("Firebase initialization skipped:", e.message);
+}
 
 const getUserId = () => {
   let userId = localStorage.getItem('vaanidoc_user_id');
@@ -28,6 +37,8 @@ const getUserId = () => {
 };
 
 export const saveAnonymousQuery = async (data) => {
+  if (!db) return false;
+  
   try {
     const userId = getUserId();
     const docData = { ...data, userId, createdAt: new Date() };
